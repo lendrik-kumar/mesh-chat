@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmeshcore.a CMakeFiles/meshcore.dir/src/daemon.cpp.o CMakeFiles/meshcore.dir/src/meshcore_impl.cpp.o
+/usr/bin/ranlib libmeshcore.a
