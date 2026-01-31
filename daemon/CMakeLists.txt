@@ -23,4 +23,21 @@ target_include_directories(meshcore
 
 find_package(Threads REQUIRED)
 target_link_libraries(meshcore PRIVATE Threads::Threads)
+add_executable(daemon_test
+    test/daemon_test.cpp
+)
+target_link_libraries(daemon_test
+    PRIVATE meshcore
+)
+target_include_directories(daemon_test
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+add_executable(meshcore_c_test
+    test/meshcore_c_test.c
+)
+
+target_link_libraries(meshcore_c_test
+    PRIVATE meshcore
+)
 

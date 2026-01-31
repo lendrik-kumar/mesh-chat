@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/daemon_test.dir/link.d CMakeFiles/daemon_test.dir/test/daemon_test.cpp.o -o daemon_test  libmeshcore.a

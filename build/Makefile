@@ -129,6 +129,32 @@ meshcore/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcore.dir/build.make CMakeFiles/meshcore.dir/build
 .PHONY : meshcore/fast
 
+#=============================================================================
+# Target rules for targets named daemon_test
+
+# Build rule for target.
+daemon_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 daemon_test
+.PHONY : daemon_test
+
+# fast build rule for target.
+daemon_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/daemon_test.dir/build.make CMakeFiles/daemon_test.dir/build
+.PHONY : daemon_test/fast
+
+#=============================================================================
+# Target rules for targets named meshcore_c_test
+
+# Build rule for target.
+meshcore_c_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcore_c_test
+.PHONY : meshcore_c_test
+
+# fast build rule for target.
+meshcore_c_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcore_c_test.dir/build.make CMakeFiles/meshcore_c_test.dir/build
+.PHONY : meshcore_c_test/fast
+
 src/daemon.o: src/daemon.cpp.o
 .PHONY : src/daemon.o
 
@@ -177,6 +203,54 @@ src/meshcore_impl.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcore.dir/build.make CMakeFiles/meshcore.dir/src/meshcore_impl.cpp.s
 .PHONY : src/meshcore_impl.cpp.s
 
+test/daemon_test.o: test/daemon_test.cpp.o
+.PHONY : test/daemon_test.o
+
+# target to build an object file
+test/daemon_test.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/daemon_test.dir/build.make CMakeFiles/daemon_test.dir/test/daemon_test.cpp.o
+.PHONY : test/daemon_test.cpp.o
+
+test/daemon_test.i: test/daemon_test.cpp.i
+.PHONY : test/daemon_test.i
+
+# target to preprocess a source file
+test/daemon_test.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/daemon_test.dir/build.make CMakeFiles/daemon_test.dir/test/daemon_test.cpp.i
+.PHONY : test/daemon_test.cpp.i
+
+test/daemon_test.s: test/daemon_test.cpp.s
+.PHONY : test/daemon_test.s
+
+# target to generate assembly for a file
+test/daemon_test.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/daemon_test.dir/build.make CMakeFiles/daemon_test.dir/test/daemon_test.cpp.s
+.PHONY : test/daemon_test.cpp.s
+
+test/meshcore_c_test.o: test/meshcore_c_test.c.o
+.PHONY : test/meshcore_c_test.o
+
+# target to build an object file
+test/meshcore_c_test.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcore_c_test.dir/build.make CMakeFiles/meshcore_c_test.dir/test/meshcore_c_test.c.o
+.PHONY : test/meshcore_c_test.c.o
+
+test/meshcore_c_test.i: test/meshcore_c_test.c.i
+.PHONY : test/meshcore_c_test.i
+
+# target to preprocess a source file
+test/meshcore_c_test.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcore_c_test.dir/build.make CMakeFiles/meshcore_c_test.dir/test/meshcore_c_test.c.i
+.PHONY : test/meshcore_c_test.c.i
+
+test/meshcore_c_test.s: test/meshcore_c_test.c.s
+.PHONY : test/meshcore_c_test.s
+
+# target to generate assembly for a file
+test/meshcore_c_test.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcore_c_test.dir/build.make CMakeFiles/meshcore_c_test.dir/test/meshcore_c_test.c.s
+.PHONY : test/meshcore_c_test.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -185,13 +259,21 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... daemon_test"
 	@echo "... meshcore"
+	@echo "... meshcore_c_test"
 	@echo "... src/daemon.o"
 	@echo "... src/daemon.i"
 	@echo "... src/daemon.s"
 	@echo "... src/meshcore_impl.o"
 	@echo "... src/meshcore_impl.i"
 	@echo "... src/meshcore_impl.s"
+	@echo "... test/daemon_test.o"
+	@echo "... test/daemon_test.i"
+	@echo "... test/daemon_test.s"
+	@echo "... test/meshcore_c_test.o"
+	@echo "... test/meshcore_c_test.i"
+	@echo "... test/meshcore_c_test.s"
 .PHONY : help
 
 
