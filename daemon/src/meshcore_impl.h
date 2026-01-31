@@ -1,10 +1,10 @@
 #pragma once
+#include "daemon.h"
 #ifdef __cplusplus
 extern "C"{
 #endif
     struct MeshCore{
-        int running;
-        void* daemon;
+        Daemon* daemon;
     };
 #ifdef __cplusplus
 }
