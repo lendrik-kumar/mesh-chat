@@ -2,26 +2,38 @@
 #include "meshcore.h"
 #include <stdlib.h>
 #include <string.h>
-meshcore* meshcore_create(){
-    meshcore* core=(meshcore*)malloc(sizeof(struct MeshCore));
+#include "daemon.h"
+#include <new>
+struct MeshCore{
+    Daemon* daemon;
+};
+meshcore* meshcore_create_impl(){
+    meshcore* core = new (std::nothrow)meshcore;
     if (!core){
-        return NULL;
+        return nullptr;
     }
-    memset(core,0,sizeof(*core));
-    core->running=1;
-    core->daemon=NULL;
+    core->daemon=new (std::nothrow)Daemon;
+    if (!core->daemon){
+        delete core;
+        return nullptr;
+    }
+    core->daemon->start();
     return core;
 }
-void meshcore_destroy(meshcore* core){
+void meshcore_destroy_impl(meshcore* core){
     if (!core){
         return ;
     }
-    core->running=0;
-    free(core);
+    if (core->daemon){
+        core->daemon->stop();
+        delete core->daemon;
+        core->daemon=nullptr;
+    }
+    delete core;
 }
-bool meshcore_is_running(const meshcore* core){
-    if (!core){
+bool meshcore_is_running_impl(const meshcore* core){
+    if (!core||!core->daemon){
         return false;
     }
-    return core->running!=0;
+    return core->daemon->is_running();
 }

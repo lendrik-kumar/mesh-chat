@@ -12,6 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(meshcore
     src/daemon.cpp
     src/meshcore_impl.cpp
+    src/meshcore_bridge.c
 )
 
 target_include_directories(meshcore
