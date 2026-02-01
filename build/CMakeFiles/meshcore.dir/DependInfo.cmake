@@ -8,6 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/kakarot/Documents/mesh-chat/daemon/src/meshcore_bridge.c" "CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o" "gcc" "CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o.d"
   "/home/kakarot/Documents/mesh-chat/daemon/src/daemon.cpp" "CMakeFiles/meshcore.dir/src/daemon.cpp.o" "gcc" "CMakeFiles/meshcore.dir/src/daemon.cpp.o.d"
   "/home/kakarot/Documents/mesh-chat/daemon/src/meshcore_impl.cpp" "CMakeFiles/meshcore.dir/src/meshcore_impl.cpp.o" "gcc" "CMakeFiles/meshcore.dir/src/meshcore_impl.cpp.o.d"
   )

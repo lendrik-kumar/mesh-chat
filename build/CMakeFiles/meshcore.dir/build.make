@@ -100,19 +100,35 @@ CMakeFiles/meshcore.dir/src/meshcore_impl.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/meshcore.dir/src/meshcore_impl.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/kakarot/Documents/mesh-chat/daemon/src/meshcore_impl.cpp -o CMakeFiles/meshcore.dir/src/meshcore_impl.cpp.s
 
+CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o: CMakeFiles/meshcore.dir/flags.make
+CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o: /home/kakarot/Documents/mesh-chat/daemon/src/meshcore_bridge.c
+CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o: CMakeFiles/meshcore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/kakarot/Documents/mesh-chat/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o -MF CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o.d -o CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o -c /home/kakarot/Documents/mesh-chat/daemon/src/meshcore_bridge.c
+
+CMakeFiles/meshcore.dir/src/meshcore_bridge.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/meshcore.dir/src/meshcore_bridge.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/kakarot/Documents/mesh-chat/daemon/src/meshcore_bridge.c > CMakeFiles/meshcore.dir/src/meshcore_bridge.c.i
+
+CMakeFiles/meshcore.dir/src/meshcore_bridge.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/meshcore.dir/src/meshcore_bridge.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/kakarot/Documents/mesh-chat/daemon/src/meshcore_bridge.c -o CMakeFiles/meshcore.dir/src/meshcore_bridge.c.s
+
 # Object files for target meshcore
 meshcore_OBJECTS = \
 "CMakeFiles/meshcore.dir/src/daemon.cpp.o" \
-"CMakeFiles/meshcore.dir/src/meshcore_impl.cpp.o"
+"CMakeFiles/meshcore.dir/src/meshcore_impl.cpp.o" \
+"CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o"
 
 # External object files for target meshcore
 meshcore_EXTERNAL_OBJECTS =
 
 libmeshcore.a: CMakeFiles/meshcore.dir/src/daemon.cpp.o
 libmeshcore.a: CMakeFiles/meshcore.dir/src/meshcore_impl.cpp.o
+libmeshcore.a: CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o
 libmeshcore.a: CMakeFiles/meshcore.dir/build.make
 libmeshcore.a: CMakeFiles/meshcore.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/kakarot/Documents/mesh-chat/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX static library libmeshcore.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/kakarot/Documents/mesh-chat/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX static library libmeshcore.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/meshcore.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/meshcore.dir/link.txt --verbose=$(VERBOSE)
 

@@ -2,10 +2,15 @@
 #include "meshcore.h"
 #include <stdlib.h>
 #include <string.h>
-meshcore* meshcore_create(){
+#include "daemon.h"
+#include <new>
+struct MeshCore{
+    Daemon* daemon;
+};
+meshcore* meshcore_create_impl(){
     meshcore* core = new (std::nothrow)meshcore;
     if (!core){
-        return NULL;
+        return nullptr;
     }
     core->daemon=new (std::nothrow)Daemon;
     if (!core->daemon){
@@ -15,7 +20,7 @@ meshcore* meshcore_create(){
     core->daemon->start();
     return core;
 }
-void meshcore_destroy(meshcore* core){
+void meshcore_destroy_impl(meshcore* core){
     if (!core){
         return ;
     }
@@ -26,7 +31,7 @@ void meshcore_destroy(meshcore* core){
     }
     delete core;
 }
-bool meshcore_is_running(const meshcore* core){
+bool meshcore_is_running_impl(const meshcore* core){
     if (!core||!core->daemon){
         return false;
     }

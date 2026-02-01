@@ -179,6 +179,30 @@ src/daemon.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcore.dir/build.make CMakeFiles/meshcore.dir/src/daemon.cpp.s
 .PHONY : src/daemon.cpp.s
 
+src/meshcore_bridge.o: src/meshcore_bridge.c.o
+.PHONY : src/meshcore_bridge.o
+
+# target to build an object file
+src/meshcore_bridge.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcore.dir/build.make CMakeFiles/meshcore.dir/src/meshcore_bridge.c.o
+.PHONY : src/meshcore_bridge.c.o
+
+src/meshcore_bridge.i: src/meshcore_bridge.c.i
+.PHONY : src/meshcore_bridge.i
+
+# target to preprocess a source file
+src/meshcore_bridge.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcore.dir/build.make CMakeFiles/meshcore.dir/src/meshcore_bridge.c.i
+.PHONY : src/meshcore_bridge.c.i
+
+src/meshcore_bridge.s: src/meshcore_bridge.c.s
+.PHONY : src/meshcore_bridge.s
+
+# target to generate assembly for a file
+src/meshcore_bridge.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcore.dir/build.make CMakeFiles/meshcore.dir/src/meshcore_bridge.c.s
+.PHONY : src/meshcore_bridge.c.s
+
 src/meshcore_impl.o: src/meshcore_impl.cpp.o
 .PHONY : src/meshcore_impl.o
 
@@ -265,6 +289,9 @@ help:
 	@echo "... src/daemon.o"
 	@echo "... src/daemon.i"
 	@echo "... src/daemon.s"
+	@echo "... src/meshcore_bridge.o"
+	@echo "... src/meshcore_bridge.i"
+	@echo "... src/meshcore_bridge.s"
 	@echo "... src/meshcore_impl.o"
 	@echo "... src/meshcore_impl.i"
 	@echo "... src/meshcore_impl.s"
