@@ -67,6 +67,7 @@ void Daemon::loopy(){
                 break;
             case EventType::dataReceived:
                 std::cout << "data recieved from peer : " << eve.peerid << " : " << eve.peerData << "\n";
+                sendy(eve.peerid,eve.peerData);
                 break;
         }
         lock.lock();
@@ -79,6 +80,20 @@ void Daemon::enqueue_event(Event event){
     work_queue.push(event);
     }
     cv.notify_one();
+}
+void Daemon:: set_transport(Transport* t){
+    std::lock_guard<std::mutex>lock(mtx);
+    transport=t;
+}
+void Daemon::sendy(uint64_t peerid,const std::string&data){
+    Transport *t=nullptr;
+    {
+        std::lock_guard<std::mutex>lock(mtx);
+        t=transport;
+    }
+    if (t){
+        t->send(peerid,data);
+    }
 }
 Daemon::~Daemon(){
     stop();
