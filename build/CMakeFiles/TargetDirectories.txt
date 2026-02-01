@@ -1,5 +1,0 @@
-/home/kakarot/Documents/mesh-chat/build/CMakeFiles/meshcore.dir
-/home/kakarot/Documents/mesh-chat/build/CMakeFiles/daemon_test.dir
-/home/kakarot/Documents/mesh-chat/build/CMakeFiles/meshcore_c_test.dir
-/home/kakarot/Documents/mesh-chat/build/CMakeFiles/edit_cache.dir
-/home/kakarot/Documents/mesh-chat/build/CMakeFiles/rebuild_cache.dir
