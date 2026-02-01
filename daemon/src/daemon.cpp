@@ -53,13 +53,33 @@ void Daemon::loopy(){
         if (!running){
             break;
         }
+        Event eve=std::move(work_queue.front());
+        work_queue.pop();
         busy=true;
         lock.unlock();
         // queeue se pop karo aur bc kaam karo zindagi mein
+        switch(eve.event_type){
+            case EventType::peerConnected:
+                std::cout << "peer connected " << eve.peerid << "\n";
+                break;
+            case EventType::peerDisconnected:
+                std::cout << "peer disconnected " << eve.peerid <<"\n";
+                break;
+            case EventType::dataReceived:
+                std::cout << "data recieved from peer : " << eve.peerid << " : " << eve.peerData << "\n";
+                break;
+        }
         lock.lock();
         busy=false;
     }
-};
+}
+void Daemon::enqueue_event(Event event){
+    {
+    std::unique_lock<std::mutex>lock(mtx);
+    work_queue.push(event);
+    }
+    cv.notify_one();
+}
 Daemon::~Daemon(){
     stop();
 }
