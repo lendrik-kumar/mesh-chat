@@ -3,6 +3,10 @@
 #include <condition_variable>
 #include <thread>
 #include <queue>
+#include <cstdint>
+#include <string>
+#include "transport.h"
+class Transport;
 class Daemon{
     private:
         bool running;
@@ -11,7 +15,7 @@ class Daemon{
         mutable std::mutex mtx;
         std::condition_variable cv;
         std::thread worker;
-        std::queue<int>work_queue;
+        Transport* transport;
     public:
         Daemon();
         void start();
@@ -22,5 +26,16 @@ class Daemon{
         Daemon(const Daemon&)=delete;
         Daemon&operator=(const Daemon&)=delete;
         ~Daemon();
+        enum class EventType{peerConnected,peerDisconnected,dataReceived};
+        struct Event{
+            EventType event_type;
+            uint64_t peerid;
+            std::string peerData;
+        };
+        void enqueue_event(Event event);
+        void set_transport(Transport* t);
+        void sendy(uint64_t peerid,const std::string& data);
+    private:
+        std::queue<Event>work_queue;
 };
 
