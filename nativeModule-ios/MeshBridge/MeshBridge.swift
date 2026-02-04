@@ -418,7 +418,7 @@ class MeshBridge: RCTEventEmitter {
 
 extension MeshBridge: MeshCoreDelegate {
     
-    func meshCoreDidReceiveMessage(_ message: MeshMessage) {
+    func meshCoreDidReceive(_ message: MeshMessage) {
         MeshBridgeLogger.log("Received message from: \(message.fromUid) (peer: \(message.fromPeerId))")
         
         guard hasListeners else {
@@ -437,7 +437,7 @@ extension MeshBridge: MeshCoreDelegate {
         sendEvent(withName: Events.onMessageReceived, body: eventBody)
     }
     
-    func meshCoreDidChangeStatus(_ status: MeshCoreStatus, message: String) {
+    func meshCoreDidChange(_ status: MeshCoreStatus, message: String) {
         MeshBridgeLogger.log("Status changed: \(status.rawValue), message: \(message)")
         
         guard hasListeners else {
@@ -466,7 +466,7 @@ extension MeshBridge: MeshCoreDelegate {
         ])
     }
     
-    func meshCoreDidUpdatePeer(_ peer: MeshPeer) {
+    func meshCoreDidUpdate(_ peer: MeshPeer) {
         MeshBridgeLogger.log("Peer updated: \(peer.peerId) (\(peer.uid)) - connected: \(peer.connected)")
         
         guard hasListeners else {
