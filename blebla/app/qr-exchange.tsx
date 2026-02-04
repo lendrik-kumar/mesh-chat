@@ -170,8 +170,8 @@ export default function QRExchangeScreen() {
               <Text
                 style={[styles.scanSubtitle, { color: theme.textSecondary }]}
               >
-                Point your camera at a contact's QR code to exchange keys and
-                establish a secure connection
+                Point your camera at a contact&apos;s QR code to exchange keys
+                and establish a secure connection
               </Text>
             </View>
 

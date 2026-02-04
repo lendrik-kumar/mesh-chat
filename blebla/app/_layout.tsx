@@ -9,6 +9,7 @@ import "react-native-reanimated";
 
 import { ChatProvider } from "@/context/ChatContext";
 import { AppThemeProvider, useAppTheme } from "@/context/ThemeContext";
+import { ToastProvider } from "@/context/ToastContext";
 
 function RootNavigator() {
   const { isDark, theme } = useAppTheme();
@@ -76,9 +77,11 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AppThemeProvider>
-      <ChatProvider>
-        <RootNavigator />
-      </ChatProvider>
+      <ToastProvider>
+        <ChatProvider>
+          <RootNavigator />
+        </ChatProvider>
+      </ToastProvider>
     </AppThemeProvider>
   );
 }

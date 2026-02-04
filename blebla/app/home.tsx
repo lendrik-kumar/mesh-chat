@@ -5,7 +5,7 @@ import { useAppTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef } from "react";
-import { Animated, FlatList, StyleSheet, Text, View } from "react-native";
+import { Animated, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
@@ -50,6 +50,10 @@ export default function HomeScreen() {
     router.push("/profile");
   };
 
+  const handleBLEPress = () => {
+    router.push("/ble-chat");
+  };
+
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <View
@@ -61,8 +65,17 @@ export default function HomeScreen() {
         No conversations yet
       </Text>
       <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-        Tap the QR button to add a new contact{"\n"}and start a secure mesh chat
+        Tap the Bluetooth icon to chat with nearby devices{"\n"}or use QR to add contacts
       </Text>
+      <Pressable
+        style={[styles.bleButton, { backgroundColor: theme.primary }]}
+        onPress={handleBLEPress}
+      >
+        <Ionicons name="bluetooth" size={20} color={theme.fabIcon} />
+        <Text style={[styles.bleButtonText, { color: theme.fabIcon }]}>
+          Start BLE Chat
+        </Text>
+      </Pressable>
     </View>
   );
 
@@ -72,6 +85,10 @@ export default function HomeScreen() {
         title="MeshChat"
         rightActions={
           <>
+            <AppBarAction
+              icon="bluetooth"
+              onPress={handleBLEPress}
+            />
             <AppBarAction
               icon={isDark ? "sunny" : "moon"}
               onPress={toggleTheme}
@@ -165,5 +182,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: "center",
     lineHeight: 22,
+  },
+  bleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.md,
+  },
+  bleButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
