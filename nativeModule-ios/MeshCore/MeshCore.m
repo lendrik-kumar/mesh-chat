@@ -34,7 +34,8 @@
 #import "MeshCore.h"
 
 // Internal import - C header is ONLY visible here
-#import "../../daemon/include/meshcore.h"
+// Path is relative to the ios/blebla/MeshCore/ directory after Expo prebuild copies files
+#import "../Daemon/meshcore.h"
 
 // Swift/ObjC bridging - BLEManager is in Swift
 // This imports the auto-generated Swift header
