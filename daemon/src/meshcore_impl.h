@@ -21,6 +21,7 @@ const char* meshcore_get_version_impl(void);
 
 // Callbacks
 void meshcore_set_callbacks_impl(meshcore* core, const meshcore_callbacks* callbacks);
+void meshcore_set_transport_callbacks_impl(meshcore* core, const meshcore_transport_callbacks* callbacks);
 
 // Messaging
 meshcore_error meshcore_send_message_impl(meshcore* core, uint64_t peer_id, const char* message, size_t len);
@@ -28,6 +29,9 @@ meshcore_error meshcore_send_message_to_uid_impl(meshcore* core, const char* uid
 
 // Peer management
 uint32_t meshcore_get_peer_count_impl(const meshcore* core);
+void meshcore_ingest_peer_connected_impl(meshcore* core, uint64_t peer_id, const char* uid);
+void meshcore_ingest_peer_disconnected_impl(meshcore* core, uint64_t peer_id);
+void meshcore_ingest_message_impl(meshcore* core, uint64_t peer_id, const char* message, size_t len);
 
 // Test helpers
 void meshcore_simulate_peer_connect_impl(meshcore* core, uint64_t peer_id, const char* uid);

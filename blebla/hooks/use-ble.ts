@@ -32,12 +32,12 @@ const LOG_PREFIX = "[useBLE]";
 export interface BLEPeer {
   /** Unique numeric ID for the peer (hash of identifier) */
   peerId: number;
+  /** Peripheral identifier (UUID string, required for connect/disconnect) */
+  identifier: string;
   /** User ID advertised by the peer */
   uid: string;
   /** Whether currently connected */
   connected: boolean;
-  /** Peripheral identifier (UUID string) */
-  identifier?: string;
 }
 
 export interface BLEMessage {
@@ -388,7 +388,7 @@ export function useBLE(options: UseBLEOptions = {}): UseBLEResult {
 
         // Update discovered peers
         setDiscoveredPeers((prev) => {
-          const index = prev.findIndex((p) => p.peerId === event.peerId);
+          const index = prev.findIndex((p) => p.identifier === event.identifier);
           if (index >= 0) {
             const updated = [...prev];
             updated[index] = event;
@@ -400,12 +400,14 @@ export function useBLE(options: UseBLEOptions = {}): UseBLEResult {
         // Update connected peers
         setConnectedPeers((prev) => {
           if (event.connected) {
-            if (!prev.find((p) => p.peerId === event.peerId)) {
+            if (!prev.find((p) => p.identifier === event.identifier)) {
               return [...prev, event];
             }
-            return prev.map((p) => (p.peerId === event.peerId ? event : p));
+            return prev.map((p) =>
+              p.identifier === event.identifier ? event : p,
+            );
           } else {
-            return prev.filter((p) => p.peerId !== event.peerId);
+            return prev.filter((p) => p.identifier !== event.identifier);
           }
         });
 
@@ -420,7 +422,7 @@ export function useBLE(options: UseBLEOptions = {}): UseBLEResult {
         console.log(`${LOG_PREFIX} Peer discovered:`, event);
 
         setDiscoveredPeers((prev) => {
-          if (!prev.find((p) => p.peerId === event.peerId)) {
+          if (!prev.find((p) => p.identifier === event.identifier)) {
             return [...prev, event];
           }
           return prev;

@@ -131,7 +131,7 @@ export default function BLEChatScreen() {
           {
             text: "Connect",
             onPress: () => {
-              connectToPeer(peer.peerId.toString());
+              connectToPeer(peer.identifier);
             },
           },
         ]
@@ -141,7 +141,7 @@ export default function BLEChatScreen() {
 
   const handleDisconnect = () => {
     if (selectedPeer) {
-      disconnectFromPeer(selectedPeer.peerId.toString());
+      disconnectFromPeer(selectedPeer.identifier);
       setSelectedPeer(null);
       setViewMode("peers");
     }

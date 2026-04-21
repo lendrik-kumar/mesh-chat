@@ -119,13 +119,13 @@ public:
     
     // Peer management
     uint32_t get_peer_count() const;
-    void add_peer(uint64_t peer_id, const std::string& uid);
+    bool add_peer(uint64_t peer_id, const std::string& uid);
     void remove_peer(uint64_t peer_id);
     bool has_peer(uint64_t peer_id) const;
     
     // Direct send (bypasses queue for low latency)
     void send_to_peer(uint64_t peer_id, const std::string& data);
-    void send_to_uid(const std::string& uid, const std::string& data);
+    bool send_to_uid(const std::string& uid, const std::string& data);
     
 private:
     // Worker thread function
@@ -162,4 +162,3 @@ private:
     std::unordered_map<uint64_t, PeerInfo> peers_;
     mutable std::mutex peers_mutex_;
 };
-

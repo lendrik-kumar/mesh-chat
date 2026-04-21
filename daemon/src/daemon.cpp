@@ -128,8 +128,18 @@ uint32_t Daemon::get_peer_count() const {
     return static_cast<uint32_t>(peers_.size());
 }
 
-void Daemon::add_peer(uint64_t peer_id, const std::string& uid) {
+bool Daemon::add_peer(uint64_t peer_id, const std::string& uid) {
     std::lock_guard<std::mutex> lock(peers_mutex_);
+
+    auto it = peers_.find(peer_id);
+    bool existed = (it != peers_.end());
+
+    if (existed) {
+        PeerInfo &existing = it->second;
+        existing.uid = uid;
+        existing.connected = true;
+        return false;
+    }
     
     PeerInfo info;
     info.peer_id = peer_id;
@@ -138,6 +148,7 @@ void Daemon::add_peer(uint64_t peer_id, const std::string& uid) {
     info.connected_at = current_timestamp_ms();
     
     peers_[peer_id] = info;
+    return true;
 }
 
 void Daemon::remove_peer(uint64_t peer_id) {
@@ -167,7 +178,7 @@ void Daemon::send_to_peer(uint64_t peer_id, const std::string& data) {
     }
 }
 
-void Daemon::send_to_uid(const std::string& uid, const std::string& data) {
+bool Daemon::send_to_uid(const std::string& uid, const std::string& data) {
     uint64_t peer_id = 0;
     
     {
@@ -183,7 +194,10 @@ void Daemon::send_to_uid(const std::string& uid, const std::string& data) {
     
     if (peer_id != 0) {
         send_to_peer(peer_id, data);
+        return true;
     }
+
+    return false;
 }
 
 // =============================================================================
@@ -248,7 +262,10 @@ void Daemon::handle_peer_connected(const Event& event) {
               << " (uid: " << event.peer_uid << ")\n";
     
     // Add to peer list
-    add_peer(event.peer_id, event.peer_uid);
+    bool isNewPeer = add_peer(event.peer_id, event.peer_uid);
+    if (!isNewPeer) {
+        return;
+    }
     
     // Notify via callback
     if (callbacks_.on_peer) {

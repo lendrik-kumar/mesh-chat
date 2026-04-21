@@ -17,6 +17,19 @@
 #include <cstring>
 #include <string>
 
+struct MeshCore;
+
+class HostCallbackTransport : public Transport {
+public:
+    explicit HostCallbackTransport(MeshCore* core)
+        : core_(core) {}
+
+    void send(uint64_t peer_id, const std::string& data) override;
+
+private:
+    MeshCore* core_;
+};
+
 // =============================================================================
 // MARK: - Internal Structure
 // =============================================================================
@@ -26,14 +39,43 @@
  * Contains the daemon and associated objects
  */
 struct MeshCore {
-    Daemon*             daemon;
-    Loopback_transport* loopback;     // Default loopback transport for testing
-    meshcore_callbacks  callbacks;     // User callbacks
-    bool                has_callbacks;
+    Daemon*                      daemon;
+    Loopback_transport*          loopback;      // Default fallback transport
+    HostCallbackTransport*       host_transport;
+    meshcore_callbacks           callbacks;
+    bool                         has_callbacks;
+    meshcore_transport_callbacks transport_callbacks;
+    bool                         has_transport_callbacks;
 };
 
 // Version string
 static const char* VERSION_STRING = "0.2.0";
+
+static void configure_transport(MeshCore* core) {
+    if (!core || !core->daemon) {
+        return;
+    }
+
+    if (core->has_transport_callbacks && core->host_transport) {
+        core->daemon->set_transport(core->host_transport);
+        return;
+    }
+
+    core->daemon->set_transport(core->loopback);
+}
+
+void HostCallbackTransport::send(uint64_t peer_id, const std::string& data) {
+    if (!core_ || !core_->has_transport_callbacks || !core_->transport_callbacks.send) {
+        return;
+    }
+
+    core_->transport_callbacks.send(
+        core_->transport_callbacks.user_data,
+        peer_id,
+        data.c_str(),
+        data.length()
+    );
+}
 
 // =============================================================================
 // MARK: - Callback Adapter
@@ -118,8 +160,11 @@ meshcore* meshcore_create_impl(void) {
     // Initialize all fields
     core->daemon = nullptr;
     core->loopback = nullptr;
+    core->host_transport = nullptr;
     core->has_callbacks = false;
+    core->has_transport_callbacks = false;
     std::memset(&core->callbacks, 0, sizeof(core->callbacks));
+    std::memset(&core->transport_callbacks, 0, sizeof(core->transport_callbacks));
     
     // Create daemon
     core->daemon = new (std::nothrow) Daemon;
@@ -127,12 +172,18 @@ meshcore* meshcore_create_impl(void) {
         delete core;
         return nullptr;
     }
+
+    core->host_transport = new (std::nothrow) HostCallbackTransport(core);
     
     // Create and attach loopback transport (for testing)
     core->loopback = new (std::nothrow) Loopback_transport(*core->daemon);
-    if (core->loopback) {
-        core->daemon->set_transport(core->loopback);
+    if (!core->loopback) {
+        delete core->host_transport;
+        delete core->daemon;
+        delete core;
+        return nullptr;
     }
+    configure_transport(core);
     
     // Start the daemon
     core->daemon->start();
@@ -156,6 +207,11 @@ void meshcore_destroy_impl(meshcore* core) {
     if (core->loopback) {
         delete core->loopback;
         core->loopback = nullptr;
+    }
+
+    if (core->host_transport) {
+        delete core->host_transport;
+        core->host_transport = nullptr;
     }
     
     delete core;
@@ -193,6 +249,22 @@ void meshcore_set_callbacks_impl(meshcore* core, const meshcore_callbacks* callb
     setup_daemon_callbacks(core);
 }
 
+void meshcore_set_transport_callbacks_impl(meshcore* core, const meshcore_transport_callbacks* callbacks) {
+    if (!core) {
+        return;
+    }
+
+    if (callbacks && callbacks->send) {
+        core->transport_callbacks = *callbacks;
+        core->has_transport_callbacks = true;
+    } else {
+        std::memset(&core->transport_callbacks, 0, sizeof(core->transport_callbacks));
+        core->has_transport_callbacks = false;
+    }
+
+    configure_transport(core);
+}
+
 // =============================================================================
 // MARK: - Messaging Implementation
 // =============================================================================
@@ -217,6 +289,10 @@ meshcore_error meshcore_send_message_impl(
     
     if (len > MESHCORE_MAX_MESSAGE_SIZE) {
         return MESHCORE_ERROR_MESSAGE_TOO_LONG;
+    }
+
+    if (peer_id != 0 && !core->daemon->has_peer(peer_id)) {
+        return MESHCORE_ERROR_PEER_NOT_FOUND;
     }
     
     // Create send event
@@ -253,8 +329,10 @@ meshcore_error meshcore_send_message_to_uid_impl(
     }
     
     // Direct send by UID (doesn't go through queue for lower latency)
-    core->daemon->send_to_uid(uid, std::string(message, len));
-    
+    if (!core->daemon->send_to_uid(uid, std::string(message, len))) {
+        return MESHCORE_ERROR_PEER_NOT_FOUND;
+    }
+
     return MESHCORE_OK;
 }
 
@@ -267,6 +345,44 @@ uint32_t meshcore_get_peer_count_impl(const meshcore* core) {
         return 0;
     }
     return core->daemon->get_peer_count();
+}
+
+void meshcore_ingest_peer_connected_impl(meshcore* core, uint64_t peer_id, const char* uid) {
+    if (!core || !core->daemon || !core->daemon->is_running()) {
+        return;
+    }
+
+    Daemon::Event event;
+    event.type = Daemon::EventType::PeerConnected;
+    event.peer_id = peer_id;
+    event.peer_uid = uid ? uid : "";
+
+    core->daemon->enqueue_event(std::move(event));
+}
+
+void meshcore_ingest_peer_disconnected_impl(meshcore* core, uint64_t peer_id) {
+    if (!core || !core->daemon || !core->daemon->is_running()) {
+        return;
+    }
+
+    Daemon::Event event;
+    event.type = Daemon::EventType::PeerDisconnected;
+    event.peer_id = peer_id;
+
+    core->daemon->enqueue_event(std::move(event));
+}
+
+void meshcore_ingest_message_impl(meshcore* core, uint64_t peer_id, const char* message, size_t len) {
+    if (!core || !core->daemon || !core->daemon->is_running() || !message || len == 0) {
+        return;
+    }
+
+    Daemon::Event event;
+    event.type = Daemon::EventType::DataReceived;
+    event.peer_id = peer_id;
+    event.data = std::string(message, len);
+
+    core->daemon->enqueue_event(std::move(event));
 }
 
 // =============================================================================

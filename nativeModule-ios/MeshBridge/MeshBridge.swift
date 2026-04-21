@@ -72,6 +72,9 @@ class MeshBridge: RCTEventEmitter {
     
     /// Whether JS is listening for events
     private var hasListeners = false
+
+    /// Track discovered peers to emit onPeerDiscovered once
+    private var discoveredPeerIdentifiers = Set<String>()
     
     /// Reference to the mesh core
     private var meshCore: MeshCore {
@@ -126,6 +129,7 @@ class MeshBridge: RCTEventEmitter {
     override func stopObserving() {
         MeshBridgeLogger.log("JS stopped observing events")
         hasListeners = false
+        discoveredPeerIdentifiers.removeAll()
     }
     
     // MARK: - Private Helpers
@@ -284,6 +288,7 @@ class MeshBridge: RCTEventEmitter {
             return [
                 "peerId": NSNumber(value: peer.peerId),
                 "uid": peer.uid,
+                "identifier": peer.identifier,
                 "connected": peer.connected
             ]
         }
@@ -302,6 +307,7 @@ class MeshBridge: RCTEventEmitter {
             return [
                 "peerId": NSNumber(value: peer.peerId),
                 "uid": peer.uid,
+                "identifier": peer.identifier,
                 "connected": peer.connected
             ]
         }
@@ -361,16 +367,27 @@ class MeshBridge: RCTEventEmitter {
             return
         }
         
-        // Send via BLE Manager directly
-        let bleManager = BLEManager.shared
-        let sent = bleManager.sendMessage(message, toUID: toUid)
-        
-        if sent {
-            MeshBridgeLogger.log("BLE message sent successfully")
-            resolve(["success": true, "message": "Message sent"])
-        } else {
-            MeshBridgeLogger.error("Failed to send BLE message")
-            reject("SEND_ERROR", "Failed to send message - peer may not be connected", nil)
+        meshCore.sendMessage(message, to: toUid) { success, errorCode in
+            if success {
+                MeshBridgeLogger.log("BLE message sent through daemon successfully")
+                resolve(["success": true, "message": "Message sent"])
+            } else {
+                let errorMessage: String
+                switch errorCode {
+                case .notRunning:
+                    errorMessage = "MeshCore is not running"
+                case .peerNotFound:
+                    errorMessage = "Peer not connected"
+                case .invalidParameter:
+                    errorMessage = "Invalid parameters"
+                case .messageTooLong:
+                    errorMessage = "Message exceeds maximum length"
+                default:
+                    errorMessage = "Unknown error"
+                }
+                MeshBridgeLogger.error("Failed to send BLE message via daemon: \(errorMessage)")
+                reject("SEND_ERROR", errorMessage, nil)
+            }
         }
     }
     
@@ -477,10 +494,15 @@ extension MeshBridge: MeshCoreDelegate {
         let eventBody: [String: Any] = [
             "peerId": NSNumber(value: peer.peerId),
             "uid": peer.uid,
+            "identifier": peer.identifier,
             "connected": peer.connected
         ]
         
         MeshBridgeLogger.log("Emitting onPeerUpdated event to JS")
+        if !peer.identifier.isEmpty && !discoveredPeerIdentifiers.contains(peer.identifier) {
+            discoveredPeerIdentifiers.insert(peer.identifier)
+            sendEvent(withName: Events.onPeerDiscovered, body: eventBody)
+        }
         sendEvent(withName: Events.onPeerUpdated, body: eventBody)
     }
 }

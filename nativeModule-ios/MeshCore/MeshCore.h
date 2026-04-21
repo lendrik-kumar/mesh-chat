@@ -64,10 +64,16 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) uint64_t peerId;
 @property (nonatomic, copy, readonly) NSString *uid;
 @property (nonatomic, assign, readonly) BOOL connected;
+@property (nonatomic, copy, readonly) NSString *identifier;
 
 - (instancetype)initWithPeerId:(uint64_t)peerId
                            uid:(NSString *)uid
-                     connected:(BOOL)connected;
+                     connected:(BOOL)connected
+                     identifier:(nullable NSString *)identifier;
+
+- (instancetype)initWithPeerId:(uint64_t)peerId
+                           uid:(NSString *)uid
+                      connected:(BOOL)connected;
 
 @end
 

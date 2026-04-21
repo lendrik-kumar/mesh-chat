@@ -41,6 +41,10 @@ void meshcore_set_callbacks(meshcore* core, const meshcore_callbacks* callbacks)
     meshcore_set_callbacks_impl(core, callbacks);
 }
 
+void meshcore_set_transport_callbacks(meshcore* core, const meshcore_transport_callbacks* callbacks) {
+    meshcore_set_transport_callbacks_impl(core, callbacks);
+}
+
 // =============================================================================
 // MARK: - Messaging
 // =============================================================================
@@ -69,6 +73,18 @@ meshcore_error meshcore_send_message_to_uid(
 
 uint32_t meshcore_get_peer_count(const meshcore* core) {
     return meshcore_get_peer_count_impl(core);
+}
+
+void meshcore_ingest_peer_connected(meshcore* core, uint64_t peer_id, const char* uid) {
+    meshcore_ingest_peer_connected_impl(core, peer_id, uid);
+}
+
+void meshcore_ingest_peer_disconnected(meshcore* core, uint64_t peer_id) {
+    meshcore_ingest_peer_disconnected_impl(core, peer_id);
+}
+
+void meshcore_ingest_message(meshcore* core, uint64_t peer_id, const char* message, size_t len) {
+    meshcore_ingest_message_impl(core, peer_id, message, len);
 }
 
 // =============================================================================

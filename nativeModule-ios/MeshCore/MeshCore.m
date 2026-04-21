@@ -12,7 +12,11 @@
  * - meshcore_set_callbacks()
  * - meshcore_send_message()
  * - meshcore_send_message_to_uid()
+ * - meshcore_set_transport_callbacks()
  * - meshcore_get_peer_count()
+ * - meshcore_ingest_peer_connected()
+ * - meshcore_ingest_peer_disconnected()
+ * - meshcore_ingest_message()
  * - meshcore_simulate_peer_connect()
  * - meshcore_simulate_message()
  *
@@ -100,19 +104,27 @@ static void MeshCoreLogError(NSString *format, ...) {
 
 - (instancetype)initWithPeerId:(uint64_t)peerId
                            uid:(NSString *)uid
-                     connected:(BOOL)connected {
+                      connected:(BOOL)connected {
+    return [self initWithPeerId:peerId uid:uid connected:connected identifier:nil];
+}
+
+- (instancetype)initWithPeerId:(uint64_t)peerId
+                           uid:(NSString *)uid
+                     connected:(BOOL)connected
+                     identifier:(NSString *)identifier {
     self = [super init];
     if (self) {
         _peerId = peerId;
         _uid = [uid copy] ?: @"";
         _connected = connected;
+        _identifier = [identifier copy] ?: @"";
     }
     return self;
 }
 
 - (NSString *)description {
-    return [NSString stringWithFormat:@"<MeshPeer id:%llu uid:%@ connected:%@>",
-            self.peerId, self.uid, self.connected ? @"YES" : @"NO"];
+    return [NSString stringWithFormat:@"<MeshPeer id:%llu uid:%@ identifier:%@ connected:%@>",
+            self.peerId, self.uid, self.identifier, self.connected ? @"YES" : @"NO"];
 }
 
 @end
@@ -141,6 +153,11 @@ static void MeshCoreLogError(NSString *format, ...) {
 
 /// Cache for connected peers (from BLE)
 @property (nonatomic, strong) NSMutableDictionary<NSString *, MeshPeer *> *connectedPeersCache;
+
+/// Mapping of daemon peer id -> BLE identifier UUID string
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, NSString *> *peerIdentifiersById;
+
+- (nullable NSString *)identifierForPeerId:(uint64_t)peerId;
 
 @end
 
@@ -221,10 +238,70 @@ static void meshcore_on_peer(void* user_data, uint64_t peer_id, const char* peer
     
     dispatch_async(dispatch_get_main_queue(), ^{
         if (core.delegate && [core.delegate respondsToSelector:@selector(meshCoreDidUpdatePeer:)]) {
-            MeshPeer *peer = [[MeshPeer alloc] initWithPeerId:peer_id uid:uidStr connected:connected];
+            NSString *identifier = [core identifierForPeerId:peer_id];
+            MeshPeer *peer = [[MeshPeer alloc] initWithPeerId:peer_id
+                                                          uid:uidStr
+                                                    connected:connected
+                                                    identifier:identifier];
             [core.delegate meshCoreDidUpdatePeer:peer];
+
+            if (!connected) {
+                @synchronized (core.peerIdentifiersById) {
+                    [core.peerIdentifiersById removeObjectForKey:@(peer_id)];
+                }
+            }
         }
     });
+}
+
+/**
+ * Called by daemon when it needs host transport delivery.
+ * This routes daemon send requests through BLEManager.
+ */
+static int meshcore_transport_send(void* user_data, uint64_t peer_id, const char* message, size_t message_len) {
+    MeshCore *core = (__bridge MeshCore *)user_data;
+    if (!core) {
+        core = g_sharedInstance;
+    }
+    if (!core) {
+        return MESHCORE_ERROR_UNKNOWN;
+    }
+
+    if (!message || message_len == 0) {
+        return MESHCORE_ERROR_INVALID_PARAM;
+    }
+
+    NSString *messageStr = [[NSString alloc] initWithBytes:message
+                                                    length:message_len
+                                                  encoding:NSUTF8StringEncoding];
+    if (!messageStr) {
+        return MESHCORE_ERROR_INVALID_PARAM;
+    }
+
+    __block NSString *identifier = nil;
+    @synchronized (core.peerIdentifiersById) {
+        identifier = [core.peerIdentifiersById[@(peer_id)] copy];
+    }
+
+    if (!identifier) {
+        MeshCoreLogError(@"Transport send failed: no connected peer for id %llu", peer_id);
+        return MESHCORE_ERROR_PEER_NOT_FOUND;
+    }
+
+    NSUUID *targetUUID = [[NSUUID alloc] initWithUUIDString:identifier];
+    if (!targetUUID) {
+        MeshCoreLogError(@"Transport send failed: invalid identifier %@ for peer %llu", identifier, peer_id);
+        return MESHCORE_ERROR_PEER_NOT_FOUND;
+    }
+
+    BOOL sent = [core.bleManager sendMessage:messageStr to:targetUUID];
+    if (!sent) {
+        MeshCoreLogError(@"Transport send failed via BLE for peer %llu (%@)", peer_id, identifier);
+        return MESHCORE_ERROR_PEER_NOT_FOUND;
+    }
+
+    MeshCoreLog(@"Transport send succeeded for peer %llu (%@)", peer_id, identifier);
+    return MESHCORE_OK;
 }
 
 @implementation MeshCore
@@ -256,6 +333,7 @@ static void meshcore_on_peer(void* user_data, uint64_t peer_id, const char* peer
         _localUIDInternal = @"";
         _discoveredPeersCache = [NSMutableDictionary new];
         _connectedPeersCache = [NSMutableDictionary new];
+        _peerIdentifiersById = [NSMutableDictionary new];
         
         // Initialize BLE Manager
         _bleManager = [BLEManager shared];
@@ -361,6 +439,12 @@ static void meshcore_on_peer(void* user_data, uint64_t peer_id, const char* peer
                 .user_data = (__bridge void *)self
             };
             meshcore_set_callbacks(self.coreInstance, &callbacks);
+
+            meshcore_transport_callbacks transportCallbacks = {
+                .send = meshcore_transport_send,
+                .user_data = (__bridge void *)self
+            };
+            meshcore_set_transport_callbacks(self.coreInstance, &transportCallbacks);
             
             // Notify delegate of status change
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -594,6 +678,14 @@ static void meshcore_on_peer(void* user_data, uint64_t peer_id, const char* peer
     [self.bleManager stop];
     self.bleRunningInternal = NO;
     
+    if (self.coreInstance) {
+        @synchronized (self.connectedPeersCache) {
+            for (MeshPeer *peer in [self.connectedPeersCache allValues]) {
+                meshcore_ingest_peer_disconnected(self.coreInstance, peer.peerId);
+            }
+        }
+    }
+
     // Clear caches
     [self.discoveredPeersCache removeAllObjects];
     [self.connectedPeersCache removeAllObjects];
@@ -618,6 +710,12 @@ static void meshcore_on_peer(void* user_data, uint64_t peer_id, const char* peer
     [self.bleManager connectToPeer:peerIdentifier];
 }
 
+- (NSString *)identifierForPeerId:(uint64_t)peerId {
+    @synchronized (self.peerIdentifiersById) {
+        return self.peerIdentifiersById[@(peerId)];
+    }
+}
+
 - (void)disconnectFromPeer:(NSString *)peerIdentifier {
     MeshCoreLog(@"disconnectFromPeer: %@", peerIdentifier);
     [self.bleManager disconnectFromPeer:peerIdentifier];
@@ -631,7 +729,12 @@ static void meshcore_on_peer(void* user_data, uint64_t peer_id, const char* peer
     NSString *key = peer.identifier.UUIDString;
     MeshPeer *meshPeer = [[MeshPeer alloc] initWithPeerId:(uint64_t)[peer.identifier hash]
                                                       uid:peer.uid
-                                                connected:NO];
+                                                connected:NO
+                                                identifier:key];
+
+    @synchronized (self.peerIdentifiersById) {
+        self.peerIdentifiersById[@(meshPeer.peerId)] = key;
+    }
     
     @synchronized (self.discoveredPeersCache) {
         self.discoveredPeersCache[key] = meshPeer;
@@ -651,10 +754,20 @@ static void meshcore_on_peer(void* user_data, uint64_t peer_id, const char* peer
     
     NSString *key = peer.identifier.UUIDString;
     BOOL connected = (peer.state == BLEPeerStateConnected);
+    BOOL wasConnected = NO;
+
+    @synchronized (self.connectedPeersCache) {
+        wasConnected = (self.connectedPeersCache[key] != nil);
+    }
     
     MeshPeer *meshPeer = [[MeshPeer alloc] initWithPeerId:(uint64_t)[peer.identifier hash]
                                                       uid:peer.uid
-                                                connected:connected];
+                                                connected:connected
+                                                identifier:key];
+
+    @synchronized (self.peerIdentifiersById) {
+        self.peerIdentifiersById[@(meshPeer.peerId)] = key;
+    }
     
     @synchronized (self.discoveredPeersCache) {
         self.discoveredPeersCache[key] = meshPeer;
@@ -667,28 +780,37 @@ static void meshcore_on_peer(void* user_data, uint64_t peer_id, const char* peer
             [self.connectedPeersCache removeObjectForKey:key];
         }
     }
-    
-    // Notify delegate on main thread
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if (self.delegate && [self.delegate respondsToSelector:@selector(meshCoreDidUpdatePeer:)]) {
-            [self.delegate meshCoreDidUpdatePeer:meshPeer];
+
+    if (self.coreInstance) {
+        NSString *uidForCore = meshPeer.uid.length > 0 ? meshPeer.uid : key;
+
+        if (connected && !wasConnected) {
+            meshcore_ingest_peer_connected(self.coreInstance, meshPeer.peerId, [uidForCore UTF8String]);
+        } else if (!connected && wasConnected) {
+            meshcore_ingest_peer_disconnected(self.coreInstance, meshPeer.peerId);
         }
-    });
+    }
+    
+    // Do not emit peer callback directly; daemon callback emits canonical peer events.
 }
 
 - (void)bleManager:(BLEManager *)manager didReceiveMessage:(NSString *)message from:(BLEPeer *)peer {
     MeshCoreLog(@"BLE received message from %@: %@", peer.uid, message);
-    
-    // Notify delegate on main thread
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if (self.delegate && [self.delegate respondsToSelector:@selector(meshCoreDidReceiveMessage:)]) {
-            MeshMessage *msg = [[MeshMessage alloc] initWithFromUid:peer.uid
-                                                         fromPeerId:(uint64_t)[peer.identifier hash]
-                                                            content:message
-                                                          timestamp:(int64_t)[[NSDate date] timeIntervalSince1970] * 1000];
-            [self.delegate meshCoreDidReceiveMessage:msg];
-        }
-    });
+
+    if (!self.coreInstance || message.length == 0) {
+        return;
+    }
+
+    uint64_t peerId = (uint64_t)[peer.identifier hash];
+    NSString *uidForCore = peer.uid.length > 0 ? peer.uid : peer.identifier.UUIDString;
+    meshcore_ingest_peer_connected(self.coreInstance, peerId, [uidForCore UTF8String]);
+
+    const char *cMessage = [message UTF8String];
+    if (!cMessage) {
+        return;
+    }
+
+    meshcore_ingest_message(self.coreInstance, peerId, cMessage, strlen(cMessage));
 }
 
 - (void)bleManager:(BLEManager *)manager didUpdateState:(CBManagerState)state {

@@ -97,11 +97,33 @@ typedef struct {
     void* user_data;
 } meshcore_callbacks;
 
+/**
+ * Transport send callback invoked by the daemon when a message
+ * needs to be sent to a connected peer.
+ *
+ * The host platform (Objective-C/Swift layer) is responsible for
+ * actually delivering the payload over BLE/Wi-Fi/etc.
+ */
+typedef int (*meshcore_transport_send_callback)(
+    void* user_data,
+    uint64_t peer_id,
+    const char* message,
+    size_t message_len
+);
+
+/**
+ * Transport callbacks provided by the host platform.
+ */
+typedef struct {
+    meshcore_transport_send_callback send;
+    void* user_data;
+} meshcore_transport_callbacks;
+
 // =============================================================================
 // MARK: - Error Codes
 // =============================================================================
 
-typedef enum {
+typedef enum meshcore_error {
     MESHCORE_OK = 0,
     MESHCORE_ERROR_NOT_RUNNING = -1,
     MESHCORE_ERROR_INVALID_PARAM = -2,
@@ -168,6 +190,13 @@ const char* meshcore_get_version(void);
  */
 void meshcore_set_callbacks(meshcore* core, const meshcore_callbacks* callbacks);
 
+/**
+ * Set transport callbacks used by daemon -> host message delivery.
+ *
+ * If NULL is provided, meshcore falls back to loopback transport.
+ */
+void meshcore_set_transport_callbacks(meshcore* core, const meshcore_transport_callbacks* callbacks);
+
 // =============================================================================
 // MARK: - Messaging Functions
 // =============================================================================
@@ -217,6 +246,21 @@ meshcore_error meshcore_send_message_to_uid(
  * @return Number of peers, or 0 if not running
  */
 uint32_t meshcore_get_peer_count(const meshcore* core);
+
+/**
+ * Ingest a peer connected event from the host transport.
+ */
+void meshcore_ingest_peer_connected(meshcore* core, uint64_t peer_id, const char* uid);
+
+/**
+ * Ingest a peer disconnected event from the host transport.
+ */
+void meshcore_ingest_peer_disconnected(meshcore* core, uint64_t peer_id);
+
+/**
+ * Ingest an incoming message from the host transport.
+ */
+void meshcore_ingest_message(meshcore* core, uint64_t peer_id, const char* message, size_t len);
 
 /**
  * Simulate a peer connection (for testing)
